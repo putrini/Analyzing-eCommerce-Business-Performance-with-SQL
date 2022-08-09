@@ -1,0 +1,502 @@
+-- Project name : Analyzing eCommerce Business Performance using SQL
+
+--TASK 1
+--step1: membuat tabel dan define its data type
+create table customers (
+    customer_id varchar,
+    customer_unique_id varchar,
+    customer_zip_code_prefix int,
+    customer_city varchar,
+    customer_state varchar);
+
+create table geolocation (
+    geolocation_zip_code_prefix varchar,
+    geolocation_lat double precision,
+    geolocation_lng double precision,
+    geolocation_city varchar,
+    geolocation_state varchar);
+    
+create table order_items (
+    order_id varchar,
+    order_item_id smallint,
+    product_id varchar,
+    seller_id varchar,
+    shipping_limit_date timestamp,
+    price real,
+    freight_value real);
+    
+create table order_payments (
+    order_id varchar,
+    payment_sequential smallint,
+    payment_type varchar,
+    payment_installments varchar,
+    payment_value real);
+
+create table order_reviews (
+    review_id varchar,
+    order_id varchar,
+    review_score smallint,
+    review_comment_title varchar,
+    review_comment_message varchar,
+    review_creation_date timestamp,
+    review_answer_time timestamp);
+
+create table orders (
+    order_id varchar,
+    customer_id varchar,
+    order_status varchar,
+    order_purchase_timestamp timestamp,
+    order_approved_at timestamp,
+    order_delivered_carrier_date timestamp,
+    order_delivered_customer_date timestamp,
+    order_estimated_delivery_date timestamp);
+
+create table product (
+    indeks int,
+    product_id varchar,
+    product_category_name varchar,
+    product_name_length real,
+    product_description_length real,
+    product_photos_qty real,
+    product_weight_g real,
+    product_length_cm real,
+    product_height_cm real,
+    product_width_cm real);
+
+create table sellers (
+    seller_id varchar,
+    seller_zip_code_prefix varchar,
+    seller_city varchar,
+    seller_state varchar);
+    
+---step2: copy data csv ke database
+
+copy customers (
+    customer_id,
+    customer_unique_id,
+    customer_zip_code_prefix,
+    customer_city,
+    customer_state)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\customers_dataset.csv'
+delimiter ','
+csv header;
+
+copy geolocation (
+    geolocation_zip_code_prefix,
+    geolocation_lat,
+    geolocation_lng,
+    geolocation_city,
+    geolocation_state)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\geolocation_dataset.csv'
+delimiter ','
+csv header;
+    
+copy order_items (
+    order_id,
+    order_item_id,
+    product_id,
+    seller_id,
+    shipping_limit_date,
+    price,
+    freight_value)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\order_items_dataset.csv'
+delimiter ','
+csv header;
+
+copy order_payments (
+    order_id,
+    payment_sequential,
+    payment_type,
+    payment_installments,
+    payment_value)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\order_payments_dataset.csv'
+delimiter ','
+csv header;
+
+copy order_reviews (
+    review_id,
+    order_id,
+    review_score,
+    review_comment_title,
+    review_comment_message,
+    review_creation_date,
+    review_answer_time)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\order_reviews_dataset.csv'
+delimiter ','
+csv header;
+
+copy orders (
+    order_id,
+    customer_id,
+    order_status,
+    order_purchase_timestamp,
+    order_approved_at,
+    order_delivered_carrier_date,
+    order_delivered_customer_date,
+    order_estimated_delivery_date)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\orders_dataset.csv'
+delimiter ','
+csv header;
+
+copy product (
+    indeks,
+    product_id,
+    product_category_name,
+    product_name_length,
+    product_description_length,
+    product_photos_qty,
+    product_weight_g,
+    product_length_cm,
+    product_height_cm,
+    product_width_cm)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\product_dataset.csv'
+delimiter ','
+csv header;
+
+copy sellers (
+    seller_id,
+    seller_zip_code_prefix,
+    seller_city,
+    seller_state)
+from 'C:\Users\HP\Documents\DATA SCIENCE\RAKAMIN - Data Science Bootcamp\Portofolio making\#1 Analyzing Ecommerce Business Performance with SQL\Dataset\sellers_dataset.csv'
+delimiter ','
+csv header;
+
+---step3: menentukan primary key dan foreign key
+
+alter table product add primary key (product_id)
+alter table sellers add primary key (seller_id)
+alter table orders add primary key (order_id)
+alter table customers add primary key (customer_id)
+
+alter table order_items add foreign key (product_id) references product(product_id)
+alter table order_items add foreign key (order_id) references orders(order_id)
+alter table order_items add foreign key (seller_id) references sellers(seller_id)
+alter table orders add foreign key (customer_id) references customers(customer_id)
+alter table order_reviews add foreign key (order_id) references orders(order_id)
+alter table order_payments add foreign key (order_id) references orders(order_id)
+
+--TASK 2: ANNUAL CUSTOMER ACTIVITY GROWTH ANALYSIS
+
+--subtask1: Menampilkan rata-rata jumlah customer aktif bulanan (monthly active user) untuk setiap tahun
+--step 1:buat master data jumlah customer per bulan per tahun 
+
+with master as (
+select 
+    date_part ('year', o.order_purchase_timestamp) as year,
+    date_part ('month', o.order_purchase_timestamp) as month,
+    count (distinct c.customer_unique_id) as jumlah
+from orders as o
+join customers as c
+on o.customer_id = c.customer_id
+group by 1,2
+order by 1,2)
+
+--step 2: agregasi untuk cari rata rata customer per tahun
+
+select
+    year,
+    round (avg (jumlah),2) as avg_mau
+from master 
+group by 1
+order by 1;
+
+--subtask2: total customer baru per tahun
+--step1: membuat master data yang menampilkan informasi tanggal first purchase per customer
+
+with master as (
+select 
+    c.customer_unique_id as customer_id,
+    min(o.order_purchase_timestamp) as first_purchase
+from orders as o
+join customers as c
+on o.customer_id = c.customer_id
+group by 1)
+
+--step2: melakukan agregasi untuk mencari jumlah customer baru per tahun
+
+select 
+    date_part('year',first_purchase) as year,
+    count(customer_id)
+from master
+group by 1
+order by 1
+
+--subtask3: jumlah returning customer per tahun
+--step 1: tampilkan jumlah order per customer per tahun dengan filter jumlah order > 1
+
+with master as (
+select 
+     date_part('year',o.order_purchase_timestamp) as year,
+     c.customer_unique_id as customer,
+     count(order_id)
+from orders as o
+     join customers as c
+     on o.customer_id = c.customer_id
+group by 1,2
+having count(order_id) > 1
+order by 1)
+
+--step 2: agregasi jumlah customer per tahun
+select
+    year,
+    count(customer) as returning_customer
+from master
+group by 1
+order by 1
+
+--subtask 4: rata-rata frekuensi order untuk setiap tahun
+--step 1:menampilkan jumlah order per customer per tahun
+
+with master as (
+select 
+    date_part('year',o.order_purchase_timestamp) as year,
+    c.customer_unique_id as customer_id,
+    count(order_id) as jumlah_order
+from orders as o
+join customers as c
+on o.customer_id = c.customer_id
+group by 1,2
+order by 1)
+
+--step 2: agregasi untuk mencari average order per customer per tahun
+
+select
+    year,
+    round(avg(jumlah_order),3) as avg_order_percustomer
+from master 
+group by 1
+order by 1;
+
+--subtask 5: menggabungkan hasil subtask 1-4 dengan CTE
+
+with satu as (
+with master as (
+select 
+    date_part ('year', o.order_purchase_timestamp) as year,
+    date_part ('month', o.order_purchase_timestamp) as month,
+    count (distinct c.customer_unique_id) as jumlah
+from orders as o
+join customers as c
+on o.customer_id = c.customer_id
+group by 1,2
+order by 1,2)
+select
+    year,
+    round (avg (jumlah),2) as avg_mau
+from master 
+group by 1
+order by 1),
+
+dua as (
+with master as (
+select 
+    c.customer_unique_id as customer_id,
+    min(o.order_purchase_timestamp) as first_purchase
+from orders as o
+join customers as c
+on o.customer_id = c.customer_id
+group by 1)
+select 
+    date_part('year',first_purchase) as year,
+    count(customer_id) as new_customer
+from master
+group by 1
+order by 1),
+
+tiga as (
+with master as (
+select 
+     date_part('year',o.order_purchase_timestamp) as year,
+     c.customer_unique_id as customer,
+     count(order_id)
+from orders as o
+     join customers as c
+     on o.customer_id = c.customer_id
+group by 1,2
+having count(order_id) > 1
+order by 1)
+select
+    year,
+    count(customer) as returning_customer
+from master
+group by 1
+order by 1),
+
+empat as (
+with master as (
+select 
+    date_part('year',o.order_purchase_timestamp) as year,
+    c.customer_unique_id as customer_id,
+    count(order_id) as jumlah_order
+from orders as o
+join customers as c
+on o.customer_id = c.customer_id
+group by 1,2
+order by 1)
+select
+    year,
+    round(avg(jumlah_order),3) as avg_order
+from master 
+group by 1
+order by 1)
+
+select 
+    satu.year,
+    satu.avg_mau,
+    dua.new_customer,
+    tiga.returning_customer,
+    empat.avg_order
+from satu 
+join dua 
+on satu.year=dua.year
+join tiga 
+on dua.year=tiga.year
+join empat
+on tiga.year=empat.year
+group by 1,2,3,4,5
+order by 1
+    
+--TASK 3: ANNUAL CUSTOMER ACTIVITY GROWTH ANALYSIS
+
+--subtask 1: buat tabel revenue per tahun
+--step 1: menampilkan revenue per order dari table order_items
+
+create table total_revenue_per_year as
+with master as (
+    select 
+    order_id,
+    sum(price + freight_value) as revenue
+from order_items 
+group by 1)
+
+--step2: agregasi revenue per order untuk menampilkan jumlah total revenue per tahun. pastikan order status = delivered
+
+select
+    date_part ('year',orders.order_purchase_timestamp) as year,
+    sum(revenue) as revenue_per_year
+from master
+join orders
+on master.order_id = orders.order_id
+where orders.order_status = 'delivered'
+group by 1
+order by 1
+
+--subtask 2:Membuat tabel yang berisi informasi jumlah cancel order total untuk masing-masing tahun
+
+create table total_cancel_per_year as (
+select 
+    date_part('year',order_purchase_timestamp) as year,
+    count(order_id) as total_cancel_order
+from orders
+where order_status = 'canceled'
+group by 1
+order by 1)
+
+--subtask 3:Membuat tabel yang berisi nama kategori produk yang memberikan pendapatan total tertinggi untuk masing-masing tahun
+
+--step 1:tampilkan jumlah revenue per product
+create table highest_revenue_product as
+with master as(
+select
+    date_part('year',order_purchase_timestamp) as year,
+    p.product_category_name,
+    sum(oi.price+oi.freight_value) as revenue,
+    rank () over (partition by date_part('year',order_purchase_timestamp) 
+        order by sum(oi.price+oi.freight_value) desc) as rank_revenue
+from product as p
+join order_items as oi
+on p.product_id = oi.product_id
+join orders as o
+on oi.order_id = o.order_id
+group by 1,2)
+
+select
+    year,
+    product_category_name as highest_revenue_product,
+    revenue
+from master
+where rank_revenue =1
+
+--subtask 4:Membuat tabel yang berisi nama kategori produk yang memiliki jumlah cancel order terbanyak untuk masing-masing tahun
+
+create table most_canceled_product as 
+with master as(
+select
+    date_part('year',order_purchase_timestamp) as year,
+    p.product_category_name,
+    count (o.order_id),
+    rank () over (partition by date_part('year',order_purchase_timestamp) 
+        order by count(o.order_id) desc) as rank_canceled_order
+from product as p
+join order_items as oi
+on p.product_id = oi.product_id
+join orders as o
+on oi.order_id = o.order_id
+where order_status = 'canceled'
+group by 1,2
+)
+
+select
+    year,
+    product_category_name as highest_canceled_order
+from master 
+where rank_canceled_order = 1
+
+--subtask 5:Menggabungkan informasi-informasi yang telah didapatkan ke dalam satu tampilan tabel
+
+select 
+    tr.year,
+    tr.revenue_per_year,
+    hr.highest_revenue_product,
+    tc.total_cancel_order,
+    mc.highest_canceled_order
+from total_revenue_per_year as tr
+join highest_revenue_product as hr
+on tr.year=hr.year
+join total_cancel_per_year as tc
+on hr.year=tc.year
+join most_canceled_product as mc
+on tc.year=mc.year
+group by 1,2,3,4,5
+order by 1
+
+--TASK 4:
+--subtask1: Menampilkan jumlah penggunaan masing-masing tipe pembayaran secara all time diurutkan dari yang terfavorit
+
+select
+    op.payment_type,
+    count(o.order_id) as jumlah_penggunaan
+from orders as o
+join order_payments as op
+on o.order_id=op.order_id
+group by 1
+order by jumlah_penggunaan desc
+
+--subtask2:Menampilkan detail informasi jumlah penggunaan masing-masing tipe pembayaran untuk masing-masing tahun
+
+with master as (
+    select
+    date_part('year',o.order_purchase_timestamp) as year,
+    op.payment_type as payment_type,
+    count(o.order_id) as num_used
+from orders as o
+join order_payments as op
+on o.order_id=op.order_id
+group by 1,2
+order by 1,3 desc)
+
+select *,
+	case when year_2017 = 0 then NULL
+		else round((year_2018 - year_2017) / year_2017, 2)
+	end as pct_change_2017_2018
+from (
+select 
+  payment_type,
+  sum(case when year = '2016' then num_used else 0 end) as year_2016,
+  sum(case when year = '2017' then num_used else 0 end) as year_2017,
+  sum(case when year = '2018' then num_used else 0 end) as year_2018
+from master 
+group by 1) subq
+order by 5 desc
+

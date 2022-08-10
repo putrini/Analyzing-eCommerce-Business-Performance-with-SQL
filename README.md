@@ -5,8 +5,8 @@ Performance analysis is a tool you can use to check important metrics every mont
 Business metric is a quantifiable measure businesses use to track, monitor and assess the success or failure of various business processes. In e commerce company there are many metrics that should be regularly checked including customer growth, product quality and payment methods. 
 
 In this paper, we will analyze eCommerce Business Performance using SQL.
-## Goal
-The goal is to measure e-commerce business performance using business metrics related to customers activity, product quality and payment method. By these information, we can find patterns that will lead to business recommendation based on data.
+## Summary
+This project aims to analyze ecommerce business performance based on business metrics such as customer activity, product quality and payment method using SQL. The result shows that there is low returning customer eventhough new customer keeps increasing. The number of cancelled order also increasing every year and the most popular payment method is credit card.
 ## Tools
 Tools used in this project is SQL as programming language and Postgresql as the tools.
 ## Dataset
